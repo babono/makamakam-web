@@ -70,6 +70,13 @@ export interface Grave {
   /** Whether a human physically stood there. */
   verified: boolean;
   stewardName?: string | null;
+  /**
+   * The life of the person, in Markdown, written by the family. The app renders
+   * paragraphs, headings and lists; everything else falls back to plain text.
+   */
+  profileMarkdown?: string | null;
+  /** Who may read the wall: "open", "family" or "closed". */
+  wallVisibility?: "open" | "family" | "closed" | null;
   photos: Photo[];
   updatedAt?: string;
 }

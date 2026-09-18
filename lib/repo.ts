@@ -93,6 +93,8 @@ function toGrave(record: CKRecord): Grave {
     landmark: String(fieldValue(record, "landmark") ?? ""),
     verified: Boolean(Number(fieldValue(record, "verified") ?? 0)),
     stewardName: (fieldValue(record, "stewardName") as string) ?? null,
+    profileMarkdown: (fieldValue(record, "profileMarkdown") as string) ?? null,
+    wallVisibility: (fieldValue(record, "wallVisibility") as Grave["wallVisibility"]) ?? null,
     photos: [],
     updatedAt: record.modified ? new Date(record.modified.timestamp).toISOString() : undefined,
   };
@@ -254,6 +256,8 @@ export async function saveGrave(input: Omit<Grave, "id"> & { id?: string }): Pro
         landmark: row.landmark,
         verified: row.verified,
         stewardName: row.stewardName,
+        profileMarkdown: row.profileMarkdown,
+        wallVisibility: row.wallVisibility,
       }),
     });
     return row;

@@ -101,6 +101,8 @@ export async function saveGraveAction(form: FormData) {
     landmark: text(form, "landmark"),
     verified: form.get("verified") === "on",
     stewardName: optionalText(form, "stewardName"),
+    profileMarkdown: optionalText(form, "profileMarkdown"),
+    wallVisibility: (optionalText(form, "wallVisibility") as Grave["wallVisibility"]) ?? "open",
     photos: existing?.photos ?? [],
   };
 

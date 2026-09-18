@@ -54,6 +54,8 @@ export async function GET(
       photos: strip(grave.photos),
       verified: grave.verified,
       stewardName: grave.stewardName ?? null,
+      profileMarkdown: grave.profileMarkdown ?? null,
+      wallVisibility: grave.wallVisibility ?? "open",
     })),
     // Seeded memories and visits stay with the app for now; the admin does not
     // author what other people wrote.

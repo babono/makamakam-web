@@ -167,6 +167,21 @@ export function GraveFields({ grave, cemeteryId }: { grave?: Grave; cemeteryId: 
       <Field label="Penjaga catatan (keluarga inti)">
         <input name="stewardName" defaultValue={grave?.stewardName ?? ""} />
       </Field>
+      <div className="sm:col-span-2">
+        <Field
+          label="Riwayat hidup (Markdown)"
+          hint="Ditulis keluarga, dibaca di aplikasi. Paragraf, judul dengan #, daftar dengan -. Boleh dikosongkan — kebanyakan makam memang tidak punya."
+        >
+          <textarea name="profileMarkdown" rows={8} defaultValue={grave?.profileMarkdown ?? ""} />
+        </Field>
+      </div>
+      <Field label="Siapa yang boleh membaca dinding" hint="Sebagian keluarga tidak menginginkan dinding sama sekali, dan itu hak mereka.">
+        <select name="wallVisibility" defaultValue={grave?.wallVisibility ?? "open"}>
+          <option value="open">Terbuka untuk siapa pun</option>
+          <option value="family">Hanya keluarga</option>
+          <option value="closed">Ditutup</option>
+        </select>
+      </Field>
       <label className="flex items-center gap-2 self-end pb-2 text-sm">
         <input
           type="checkbox"
