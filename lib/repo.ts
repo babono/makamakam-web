@@ -56,7 +56,9 @@ function toCemetery(record: CKRecord): Cemetery {
     surveyedSection: String(fieldValue(record, "surveyedSection") ?? "A"),
     rows: Number(fieldValue(record, "rows") ?? 1),
     plotsPerRow: Number(fieldValue(record, "plotsPerRow") ?? 1),
-    photos: JSON.parse(String(fieldValue(record, "photosJSON") ?? "[]")) as Photo[],
+    // Filled in from Photo records by the caller: an asset belongs to a field,
+    // so photographs cannot live inside the record they belong to.
+    photos: [],
     updatedAt: record.modified ? new Date(record.modified.timestamp).toISOString() : undefined,
   };
 }
@@ -79,7 +81,7 @@ function toGrave(record: CKRecord): Grave {
     landmark: String(fieldValue(record, "landmark") ?? ""),
     verified: Boolean(Number(fieldValue(record, "verified") ?? 0)),
     stewardName: (fieldValue(record, "stewardName") as string) ?? null,
-    photos: JSON.parse(String(fieldValue(record, "photosJSON") ?? "[]")) as Photo[],
+    photos: [],
     updatedAt: record.modified ? new Date(record.modified.timestamp).toISOString() : undefined,
   };
 }
@@ -162,7 +164,6 @@ export async function saveCemetery(input: Omit<Cemetery, "id"> & { id?: string }
         surveyedSection: row.surveyedSection,
         rows: row.rows,
         plotsPerRow: row.plotsPerRow,
-        photosJSON: JSON.stringify(row.photos ?? []),
       }),
     });
     return row;
@@ -236,7 +237,6 @@ export async function saveGrave(input: Omit<Grave, "id"> & { id?: string }): Pro
         landmark: row.landmark,
         verified: row.verified,
         stewardName: row.stewardName,
-        photosJSON: JSON.stringify(row.photos ?? []),
       }),
     });
     return row;
