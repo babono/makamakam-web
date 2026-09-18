@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { getCemetery, listGraves } from "@/lib/repo";
 import { CemeteryFields, DangerButton, SubmitButton } from "@/components/Forms";
 import { PhotoManager } from "@/components/PhotoManager";
-import { deleteCemeteryAction, saveCemeteryAction } from "../../actions";
+import { deleteCemeteryAction, saveCemeteryAction } from "@/app/admin/actions";
 
 export default async function CemeteryEditor({
   params,

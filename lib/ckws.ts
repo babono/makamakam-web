@@ -88,11 +88,30 @@ export async function queryRecords(
   let continuationMarker: string | undefined;
 
   do {
-    const page = await call<{ records: CKRecord[]; continuationMarker?: string }>("records/query", {
-      query: { recordType, filterBy },
-      resultsLimit: 200,
-      continuationMarker,
-    });
+    let page: { records: CKRecord[]; continuationMarker?: string };
+    try {
+      page = await call<{ records: CKRecord[]; continuationMarker?: string }>("records/query", {
+        query: { recordType, filterBy },
+        resultsLimit: 200,
+        continuationMarker,
+      });
+    } catch (error) {
+      // An empty container has no record types at all, and asking for one that
+      // does not exist is a 404. That is the state every container starts in —
+      // and the page carrying the seed button must render in it, or there is no
+      // way to leave it.
+      if (error instanceof Error && /record_type|NOT_FOUND/i.test(error.message)) {
+        return out;
+      }
+      // A field without its queryable index fails the same way for the reader:
+      // nothing to show. Surfacing it as a crash would hide every other record.
+      if (error instanceof Error && /queryable|not marked/i.test(error.message)) {
+        console.warn(`CloudKit: ${recordType} needs a queryable index — see npm run cloudkit:doctor`);
+        return out;
+      }
+      throw error;
+    }
+
     out.push(...(page.records ?? []));
     continuationMarker = page.continuationMarker;
   } while (continuationMarker);
@@ -106,17 +125,31 @@ export async function saveRecord(record: {
   recordChangeTag?: string;
   fields: Record<string, { value: unknown }>;
 }): Promise<CKRecord> {
-  const result = await call<{ records: CKRecord[] }>("records/modify", {
-    operations: [
-      {
-        // forceUpdate: the admin is the single writer here, and a stale change
-        // tag should not strand an edit somebody has already typed.
-        operationType: record.recordChangeTag ? "forceUpdate" : "forceReplace",
-        record,
-      },
-    ],
-  });
-  return result.records[0];
+  const result = await call<{ records: Array<CKRecord & { serverErrorCode?: string; reason?: string }> }>(
+    "records/modify",
+    {
+      operations: [
+        {
+          // forceUpdate: the admin is the single writer here, and a stale change
+          // tag should not strand an edit somebody has already typed.
+          operationType: record.recordChangeTag ? "forceUpdate" : "forceReplace",
+          record,
+        },
+      ],
+    },
+  );
+
+  const saved = result.records?.[0];
+  // CloudKit answers 200 and puts the failure *inside* the record it hands back,
+  // so a write that never happened looks exactly like one that did unless this
+  // is checked. It cost an afternoon to learn; it is checked now.
+  if (!saved || saved.serverErrorCode) {
+    throw new Error(
+      `CloudKit refused ${record.recordType} ${record.recordName}: ` +
+        `${saved?.serverErrorCode ?? "no record returned"} ${saved?.reason ?? ""}`.trim(),
+    );
+  }
+  return saved;
 }
 
 export async function deleteRecord(recordName: string): Promise<void> {

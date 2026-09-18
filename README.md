@@ -70,13 +70,17 @@ make the key and give Apple the public half.
 *Server-to-Server Keys* → **Add**, paste the public key from the second command.
 Apple returns a **Key ID**.
 
-**4. Let the seed create the record types.** In the **development** environment
-CloudKit creates record types and fields on first write, so pressing *Isi dari
-survei* in the admin is enough — there is nothing to type into the Console. Run
-`npm run cloudkit:doctor` first: it reads only, and reports which of the three
-types exist and which indexes are still missing.
+**4. Import the schema.** CloudKit Console → your container → **Schema →
+Import Schema**, and choose `schema/makamakam.ckdb`.
 
-For reference, what the seed will create:
+This step cannot be skipped. Auto-created schema is a feature of the *native*
+CloudKit framework in the development environment — **Web Services does not
+create record types**, and a write to a type that does not exist comes back as
+HTTP 200 with the failure buried inside the record it hands you. The schema file
+also carries the queryable indexes, which is the other thing that cannot be
+inferred from a write.
+
+What the file defines:
 
 | Record type | Fields |
 |---|---|
@@ -84,8 +88,14 @@ For reference, what the seed will create:
 | `Grave` | `cemeteryId`, `name`, `fatherName`, `gender`, `deathDate`, `section`, `religion`, `landmark`, `stewardName` (String) · `birthYear`, `row`, `plot`, `verified` (Int64) · `latitude`, `longitude` (Double) |
 | `Photo` | `ownerId`, `ownerType`, `kind`, `caption`, `source` (String) · `image` (**Asset**) |
 
-Mark `cemeteryId` and `ownerId` **Queryable**, and add the `recordName`
-**Queryable** index to all three types, or the list pages come back empty.
+The import sets the queryable indexes too — `recordName` on all three types,
+plus `cemeteryId` on Grave and `ownerId` on Photo. Without them queries come back
+**empty rather than failing**, which reads exactly like "the seed did not work".
+If you ever build the schema by hand instead, those five indexes are the part
+that gets forgotten.
+
+Run `npm run cloudkit:doctor` after importing: it reads only, and names whatever
+is still missing.
 
 **5. Set the environment variables** — `CLOUDKIT_CONTAINER`, `CLOUDKIT_KEY_ID`,
 `CLOUDKIT_ENV=development`, and `CLOUDKIT_PRIVATE_KEY` as the *whole*

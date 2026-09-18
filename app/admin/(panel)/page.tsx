@@ -2,7 +2,7 @@ import Link from "next/link";
 import { listCemeteries, listGraves, usingCloudKit } from "@/lib/repo";
 import { SeedButton } from "@/components/SeedButton";
 import { CemeteryFields, SubmitButton } from "@/components/Forms";
-import { saveCemeteryAction } from "./actions";
+import { saveCemeteryAction } from "@/app/admin/actions";
 
 export default async function AdminHome() {
   const cemeteries = await listCemeteries();

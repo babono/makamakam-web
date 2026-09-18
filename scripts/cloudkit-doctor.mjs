@@ -74,7 +74,7 @@ for (const recordType of ["Cemetery", "Grave", "Photo"]) {
     }
   })();
 
-  if (/Unknown type|did not find record type/i.test(reason)) {
+  if (/record_type|NOT_FOUND|Unknown type/i.test(reason)) {
     console.log(`  ${recordType}: not created yet — seed once in development and it appears`);
   } else if (/not marked queryable|recordName/i.test(reason)) {
     console.log(`  ${recordType}: exists, but needs the recordName QUERYABLE index`);

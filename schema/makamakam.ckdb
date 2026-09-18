@@ -1,0 +1,66 @@
+DEFINE SCHEMA
+
+    RECORD TYPE Cemetery (
+        "___createTime"  TIMESTAMP,
+        "___createdBy"   REFERENCE,
+        "___etag"        STRING,
+        "___modTime"     TIMESTAMP,
+        "___modifiedBy"  REFERENCE,
+        "___recordID"    REFERENCE QUERYABLE,
+        address          STRING,
+        latitude         DOUBLE,
+        longitude        DOUBLE,
+        name             STRING QUERYABLE SEARCHABLE SORTABLE,
+        plotsPerRow      INT64,
+        radiusMeters     DOUBLE,
+        rows             INT64,
+        surveyedSection  STRING,
+        GRANT WRITE TO "_creator",
+        GRANT CREATE TO "_icloud",
+        GRANT READ TO "_world"
+    );
+
+    RECORD TYPE Grave (
+        "___createTime"  TIMESTAMP,
+        "___createdBy"   REFERENCE,
+        "___etag"        STRING,
+        "___modTime"     TIMESTAMP,
+        "___modifiedBy"  REFERENCE,
+        "___recordID"    REFERENCE QUERYABLE,
+        birthYear        INT64,
+        cemeteryId       STRING QUERYABLE SORTABLE,
+        deathDate        STRING,
+        fatherName       STRING,
+        gender           STRING,
+        landmark         STRING,
+        latitude         DOUBLE,
+        longitude        DOUBLE,
+        name             STRING QUERYABLE SEARCHABLE SORTABLE,
+        plot             INT64 QUERYABLE SORTABLE,
+        religion         STRING,
+        row              INT64 QUERYABLE SORTABLE,
+        section          STRING,
+        stewardName      STRING,
+        verified         INT64,
+        GRANT WRITE TO "_creator",
+        GRANT CREATE TO "_icloud",
+        GRANT READ TO "_world"
+    );
+
+    RECORD TYPE Photo (
+        "___createTime"  TIMESTAMP,
+        "___createdBy"   REFERENCE,
+        "___etag"        STRING,
+        "___modTime"     TIMESTAMP,
+        "___modifiedBy"  REFERENCE,
+        "___recordID"    REFERENCE QUERYABLE,
+        caption          STRING,
+        image            ASSET,
+        kind             STRING,
+        ownerId          STRING QUERYABLE SORTABLE,
+        ownerType        STRING,
+        source           STRING,
+        GRANT WRITE TO "_creator",
+        GRANT CREATE TO "_icloud",
+        GRANT READ TO "_world"
+    );

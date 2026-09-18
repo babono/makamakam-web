@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getCemetery } from "@/lib/repo";
 import { GraveFields, SubmitButton } from "@/components/Forms";
-import { saveGraveAction } from "../../../../actions";
+import { saveGraveAction } from "@/app/admin/actions";
 
 export default async function NewGrave({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;

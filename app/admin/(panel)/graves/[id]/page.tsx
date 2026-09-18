@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { getCemetery, getGrave } from "@/lib/repo";
 import { DangerButton, GraveFields, SubmitButton } from "@/components/Forms";
 import { PhotoManager } from "@/components/PhotoManager";
-import { deleteGraveAction, saveGraveAction } from "../../actions";
+import { deleteGraveAction, saveGraveAction } from "@/app/admin/actions";
 
 export default async function GraveEditor({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;

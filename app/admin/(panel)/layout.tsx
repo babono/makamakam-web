@@ -4,6 +4,13 @@ import { auth, isAdmin } from "@/lib/auth";
 import { usingCloudKit } from "@/lib/repo";
 import { signOut } from "@/lib/auth";
 
+/**
+ * The guard lives in this route group rather than on `/admin` itself, because a
+ * layout that redirects unauthenticated visitors to a login page *inside* its
+ * own subtree redirects the login page too — and the browser walks that loop
+ * until it gives up. `/admin/login` sits outside `(panel)` for exactly that
+ * reason.
+ */
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
 
