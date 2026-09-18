@@ -1,26 +1,70 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/*
+  The same material hierarchy as the app: speckled granite ground, a white
+  marble plaque for anything carrying words, the name cut into it, grass for the
+  things you act on, and the painted red used once.
+*/
+@theme {
+  --color-granite: #c6c5c0;
+  --color-granite-deep: #a9a8a3;
+  --color-plaque: #fbfaf7;
+  --color-ink: #16181a;
+  --color-ink-soft: #5a5c5b;
+  --color-hairline: #d5d4cf;
+  --color-grass: #4a7a3b;
+  --color-grass-deep: #33562a;
+  --color-grass-pale: #bfcdb0;
+  --color-engraved: #a8342a;
+
+  --font-engraved: var(--font-serif);
+  --font-spoken: var(--font-sans);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  background-color: var(--color-granite);
+  /* Granite grain, drawn rather than photographed, so it stays legible in sun. */
+  background-image:
+    radial-gradient(circle at 15% 22%, rgba(0, 0, 0, 0.05) 0 1px, transparent 1px),
+    radial-gradient(circle at 68% 41%, rgba(255, 255, 255, 0.07) 0 1px, transparent 1px),
+    radial-gradient(circle at 39% 78%, rgba(0, 0, 0, 0.04) 0 1px, transparent 1px),
+    radial-gradient(circle at 84% 88%, rgba(255, 255, 255, 0.06) 0 1px, transparent 1px);
+  background-size: 37px 37px, 53px 53px, 61px 61px, 43px 43px;
+  color: var(--color-ink);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  min-height: 100dvh;
+}
+
+.plaque {
+  background: var(--color-plaque);
+  border: 1px solid var(--color-hairline);
+  border-radius: 6px;
+  box-shadow: 0 2px 3px rgba(0, 0, 0, 0.12);
+}
+
+.eyebrow {
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-ink-soft);
+}
+
+input,
+textarea,
+select {
+  background: var(--color-plaque);
+  border: 1px solid var(--color-hairline);
+  border-radius: 4px;
+  padding: 0.55rem 0.7rem;
+  width: 100%;
+  color: var(--color-ink);
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  outline: 2px solid var(--color-grass);
+  outline-offset: 1px;
 }

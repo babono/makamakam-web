@@ -1,36 +1,105 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# makamakam-web
 
-## Getting Started
+The public site for [Makamakam](https://makamakam.com), its privacy policy, and
+the admin panel the *pengurus* use to keep the burial records — so nobody has to
+open the CloudKit dashboard to correct a name.
 
-First, run the development server:
+Next.js 16 (App Router), TypeScript, Tailwind v4, Auth.js v5.
 
-```bash
+```
+npm install
+cp .env.example .env.local     # AUTH_SECRET at minimum
+npm run seed                   # fills the local store from the iOS app's survey
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+`ADMIN_DEV_LOGIN=1` lets you sign in without Apple keys while developing. It is
+ignored in production builds.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## The three parts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Route | What it is |
+|---|---|
+| `/` | The app: the three pillars, the rule that governs it, and what it refuses to do. |
+| `/privacy` | Written against what the app actually does — every claim is checkable in the iOS source. |
+| `/admin` | Sign in with Apple, then add and edit cemeteries, graves and photographs. |
 
-## Learn More
+## Storage: CloudKit, and the honest answer
 
-To learn more about Next.js, take a look at the following resources:
+**Yes, you can edit CloudKit from a web app, and there are two ways — only one of
+them is right for a back office.**
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- **CloudKit JS** signs a *person* in with their Apple ID and acts as them. That
+  is what you want inside a user-facing web app, where each visitor reads and
+  writes their own private database.
+- **CloudKit Web Services with a server-to-server key** acts as the
+  *application* against the public database. No Apple ID is attached to the
+  write, which is exactly right for an admin panel: the records belong to the
+  cemetery, not to whoever happened to be signed in. That is what `lib/ckws.ts`
+  implements — ECDSA-P256 request signing, record query/modify, and the
+  three-step asset upload.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Sign in with Apple still guards the panel; it decides *who may use the tool*,
+while the server-to-server key decides *what the tool may write*. Two different
+questions, two different mechanisms.
 
-## Deploy on Vercel
+**With no CloudKit keys set, the admin writes JSON files under `.data/`
+instead.** That is not a stub — it is how this is meant to be built and
+demonstrated before a container exists, and it is what makes the whole thing
+testable on a laptop. `lib/repo.ts` is the seam; both backings satisfy it.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Turning CloudKit on
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. In the CloudKit dashboard, add record types `Cemetery` and `Grave` whose
+   fields match the `wrap({...})` calls in `lib/repo.ts` (all queryable, plus a
+   `photosJSON` string).
+2. Generate a **server-to-server key**, and paste the `.p8` into
+   `CLOUDKIT_PRIVATE_KEY` with newlines as `\n`.
+3. Set `CLOUDKIT_CONTAINER`, `CLOUDKIT_KEY_ID`, `CLOUDKIT_ENV`.
+
+The header in the admin tells you which backing is live — "CloudKit" or
+"Penyimpanan lokal" — so this is never a guess.
+
+**A caveat worth stating plainly:** the iOS app does not read CloudKit today. It
+ships a bundled `graves.json` and works with the radio off, which is deliberate
+(rural reception is unreliable, and PRD §13 makes the offline bundle the
+requirement and CloudKit the stretch). So the bridge is the **Unduh graves.json**
+button on each cemetery: it emits exactly the file
+`makamakam/Resources/graves.json` expects. Edit here, export, drop it into the
+app. When the app does adopt CloudKit, the same records are already in place.
+
+## Sign in with Apple
+
+1. Create a **Service ID** (e.g. `com.makamakam.web`) and enable Sign in with
+   Apple on it, with `https://makamakam.com/api/auth/callback/apple` as the
+   return URL.
+2. Create a **Sign in with Apple key** and download the `.p8`.
+3. Mint the client secret — Apple's expires within six months:
+
+   ```
+   npm run apple-secret -- --team ABCDE12345 --key-id XYZ9876543 \
+     --service-id com.makamakam.web --p8 ./AuthKey_XYZ9876543.p8
+   ```
+
+4. Set `AUTH_APPLE_ID` (the Service ID), `AUTH_APPLE_SECRET` (the minted JWT),
+   and `ADMIN_EMAILS`.
+
+`ADMIN_EMAILS` empty means **nobody** gets in. This panel edits the record of
+where people are buried; the safe failure is a closed door. Apple's private-relay
+addresses are stable per app, so paste whatever address the first sign-in
+reports rather than guessing.
+
+## Photographs
+
+Uploads land in `public/uploads` and are referenced by file name, the same names
+the iOS bundle uses. An empty set is normal and is left empty — many families
+have no photograph of the person, and some would not want one shown.
+
+## Deploying
+
+Vercel, with `makamakam.com` pointed at it. Set every variable from
+`.env.example` except `ADMIN_DEV_LOGIN`, and set `AUTH_URL=https://makamakam.com`.
+
+`.data/` and `public/uploads` are local-disk storage and do **not** survive a
+serverless deploy — turn CloudKit on before relying on the admin in production,
+or point the two write paths at object storage.

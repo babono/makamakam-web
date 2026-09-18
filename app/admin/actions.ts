@@ -1,0 +1,149 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import { auth, isAdmin } from "@/lib/auth";
+import {
+  removeCemetery,
+  removeGrave,
+  saveCemetery,
+  saveGrave,
+  getCemetery,
+  getGrave,
+  storePhoto,
+} from "@/lib/repo";
+import type { Faith, Grave, Photo, PhotoKind } from "@/lib/types";
+
+/**
+ * Every action re-checks the session. The layout already guards the pages, but a
+ * server action is its own endpoint — anybody can post to one.
+ */
+async function requireAdmin() {
+  const session = await auth();
+  if (!isAdmin(session?.user?.email)) {
+    throw new Error("Not permitted");
+  }
+}
+
+const text = (form: FormData, key: string) => String(form.get(key) ?? "").trim();
+const number = (form: FormData, key: string, fallback = 0) => {
+  const value = Number(form.get(key));
+  return Number.isFinite(value) ? value : fallback;
+};
+const optionalText = (form: FormData, key: string) => text(form, key) || null;
+
+export async function saveCemeteryAction(form: FormData) {
+  await requireAdmin();
+  const id = text(form, "id");
+  const existing = id ? await getCemetery(id) : undefined;
+
+  const cemetery = await saveCemetery({
+    id: id || undefined,
+    name: text(form, "name"),
+    address: text(form, "address"),
+    latitude: number(form, "latitude"),
+    longitude: number(form, "longitude"),
+    radiusMeters: number(form, "radiusMeters", 120),
+    surveyedSection: text(form, "surveyedSection") || "A",
+    rows: number(form, "rows", 1),
+    plotsPerRow: number(form, "plotsPerRow", 1),
+    photos: existing?.photos ?? [],
+  });
+
+  revalidatePath("/admin");
+  redirect(`/admin/cemeteries/${cemetery.id}`);
+}
+
+export async function deleteCemeteryAction(form: FormData) {
+  await requireAdmin();
+  await removeCemetery(text(form, "id"));
+  revalidatePath("/admin");
+  redirect("/admin");
+}
+
+export async function saveGraveAction(form: FormData) {
+  await requireAdmin();
+  const id = text(form, "id");
+  const existing = id ? await getGrave(id) : undefined;
+  const cemeteryId = text(form, "cemeteryId");
+
+  const grave: Omit<Grave, "id"> & { id?: string } = {
+    id: id || undefined,
+    cemeteryId,
+    name: text(form, "name"),
+    fatherName: optionalText(form, "fatherName"),
+    gender: (optionalText(form, "gender") as Grave["gender"]) ?? null,
+    birthYear: form.get("birthYear") ? number(form, "birthYear") : null,
+    deathDate: optionalText(form, "deathDate"),
+    section: text(form, "section") || "A",
+    row: number(form, "row", 1),
+    plot: number(form, "plot", 1),
+    latitude: number(form, "latitude"),
+    longitude: number(form, "longitude"),
+    religion: (optionalText(form, "religion") as Faith | null) ?? null,
+    landmark: text(form, "landmark"),
+    verified: form.get("verified") === "on",
+    stewardName: optionalText(form, "stewardName"),
+    photos: existing?.photos ?? [],
+  };
+
+  const saved = await saveGrave(grave);
+  revalidatePath(`/admin/cemeteries/${cemeteryId}`);
+  redirect(`/admin/graves/${saved.id}`);
+}
+
+export async function deleteGraveAction(form: FormData) {
+  await requireAdmin();
+  const cemeteryId = text(form, "cemeteryId");
+  await removeGrave(text(form, "id"));
+  revalidatePath(`/admin/cemeteries/${cemeteryId}`);
+  redirect(`/admin/cemeteries/${cemeteryId}`);
+}
+
+export async function uploadPhotoAction(form: FormData) {
+  await requireAdmin();
+  const file = form.get("file");
+  if (!(file instanceof File) || file.size === 0) return;
+
+  const kind = (text(form, "kind") || "headstone") as PhotoKind;
+  const caption = optionalText(form, "caption");
+  const photo: Photo = { ...(await storePhoto(file)), kind, caption };
+
+  const graveId = text(form, "graveId");
+  if (graveId) {
+    const grave = await getGrave(graveId);
+    if (!grave) return;
+    await saveGrave({ ...grave, photos: [...grave.photos, photo] });
+    revalidatePath(`/admin/graves/${graveId}`);
+    return;
+  }
+
+  const cemeteryId = text(form, "cemeteryId");
+  const cemetery = await getCemetery(cemeteryId);
+  if (!cemetery) return;
+  await saveCemetery({ ...cemetery, photos: [...cemetery.photos, { ...photo, kind: "cemetery" }] });
+  revalidatePath(`/admin/cemeteries/${cemeteryId}`);
+}
+
+export async function deletePhotoAction(form: FormData) {
+  await requireAdmin();
+  const photoId = text(form, "photoId");
+  const graveId = text(form, "graveId");
+
+  if (graveId) {
+    const grave = await getGrave(graveId);
+    if (!grave) return;
+    await saveGrave({ ...grave, photos: grave.photos.filter((photo) => photo.id !== photoId) });
+    revalidatePath(`/admin/graves/${graveId}`);
+    return;
+  }
+
+  const cemeteryId = text(form, "cemeteryId");
+  const cemetery = await getCemetery(cemeteryId);
+  if (!cemetery) return;
+  await saveCemetery({
+    ...cemetery,
+    photos: cemetery.photos.filter((photo) => photo.id !== photoId),
+  });
+  revalidatePath(`/admin/cemeteries/${cemeteryId}`);
+}
