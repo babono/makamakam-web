@@ -2,6 +2,8 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth, isAdmin } from "@/lib/auth";
 import { usingCloudKit } from "@/lib/repo";
+import { currentEnvironment } from "@/lib/ckws";
+import { setEnvironmentAction } from "@/app/admin/environment";
 import { signOut } from "@/lib/auth";
 
 /**
@@ -18,6 +20,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     redirect("/admin/login");
   }
 
+  const environment = usingCloudKit() ? await currentEnvironment() : null;
+
   return (
     <div className="min-h-dvh">
       <header className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-5 py-6">
@@ -28,9 +32,33 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           <span className="eyebrow">Admin</span>
         </div>
         <div className="flex items-center gap-4 text-sm text-ink-soft">
-          <span className="rounded border border-hairline bg-plaque px-2 py-1">
-            {usingCloudKit() ? "CloudKit" : "Penyimpanan lokal"}
-          </span>
+          {environment ? (
+            <form action={setEnvironmentAction} className="flex items-center gap-2">
+              <span className="rounded border border-hairline bg-plaque px-2 py-1">CloudKit</span>
+              <select
+                name="environment"
+                defaultValue={environment}
+                className="w-auto py-1"
+              >
+                <option value="development">Development</option>
+                <option value="production">Production</option>
+              </select>
+              <button
+                type="submit"
+                className={`rounded px-2 py-1 ${
+                  environment === "production"
+                    ? "bg-engraved text-plaque"
+                    : "border border-hairline bg-plaque"
+                }`}
+              >
+                {environment === "production" ? "Produksi" : "Ganti"}
+              </button>
+            </form>
+          ) : (
+            <span className="rounded border border-hairline bg-plaque px-2 py-1">
+              Penyimpanan lokal
+            </span>
+          )}
           <span>{session?.user?.email}</span>
           <form
             action={async () => {

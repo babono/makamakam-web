@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import { cookies } from "next/headers";
 
 /**
  * CloudKit Web Services, signed server-to-server.
@@ -47,9 +48,26 @@ function sign(date: string, body: string, path: string): string {
   }).toString("base64");
 }
 
+export type CloudKitEnvironment = "development" | "production";
+
+/**
+ * Which database this request works against.
+ *
+ * A cookie overrides the environment variable, so one deployment can look at
+ * both. It matters because they are *different databases with different
+ * records*: Xcode builds of the app read development, TestFlight and App Store
+ * builds read production, and a record seeded into one is simply not in the
+ * other.
+ */
+export async function currentEnvironment(): Promise<CloudKitEnvironment> {
+  const chosen = (await cookies()).get("cloudkit-env")?.value;
+  if (chosen === "production" || chosen === "development") return chosen;
+  return (process.env.CLOUDKIT_ENV as CloudKitEnvironment) ?? "development";
+}
+
 async function call<T>(operation: string, body: unknown): Promise<T> {
   const container = process.env.CLOUDKIT_CONTAINER!;
-  const environment = process.env.CLOUDKIT_ENV ?? "development";
+  const environment = await currentEnvironment();
   const path = `/database/1/${container}/${environment}/public/${operation}`;
   const payload = JSON.stringify(body);
   const date = new Date().toISOString().replace(/\.\d{3}Z$/, "Z");

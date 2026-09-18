@@ -71,3 +71,39 @@ DEFINE SCHEMA
         GRANT CREATE TO "_icloud",
         GRANT READ TO "_world"
     );
+
+    RECORD TYPE WallPost (
+        "___createTime"  TIMESTAMP,
+        "___createdBy"   REFERENCE,
+        "___etag"        STRING,
+        "___modTime"     TIMESTAMP,
+        "___modifiedBy"  REFERENCE,
+        "___recordID"    REFERENCE QUERYABLE,
+        authorName       STRING,
+        body             STRING,
+        graveID          STRING QUERYABLE SORTABLE,
+        isVisit          INT64,
+        leftFlowers      INT64,
+        postedAt         TIMESTAMP QUERYABLE SORTABLE,
+        relationship     STRING,
+        GRANT WRITE TO "_creator",
+        GRANT CREATE TO "_icloud",
+        GRANT READ TO "_world"
+    );
+
+    RECORD TYPE WallDecision (
+        "___createTime"  TIMESTAMP,
+        "___createdBy"   REFERENCE,
+        "___etag"        STRING,
+        "___modTime"     TIMESTAMP,
+        "___modifiedBy"  REFERENCE,
+        "___recordID"    REFERENCE QUERYABLE,
+        approval         STRING,
+        decidedAt        TIMESTAMP QUERYABLE SORTABLE,
+        decidedBy        STRING,
+        graveID          STRING QUERYABLE SORTABLE,
+        postID           STRING QUERYABLE SORTABLE,
+        GRANT WRITE TO "_creator",
+        GRANT CREATE TO "_icloud",
+        GRANT READ TO "_world"
+    );

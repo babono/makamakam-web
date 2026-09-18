@@ -87,6 +87,8 @@ What the file defines:
 | `Cemetery` | `name`, `address` (String) · `latitude`, `longitude`, `radiusMeters`, `rows`, `plotsPerRow` (Double/Int64) · `surveyedSection` (String) · `photosJSON` (String) |
 | `Grave` | `cemeteryId`, `name`, `fatherName`, `gender`, `deathDate`, `section`, `religion`, `landmark`, `stewardName` (String) · `birthYear`, `row`, `plot`, `verified` (Int64) · `latitude`, `longitude` (Double) |
 | `Photo` | `ownerId`, `ownerType`, `kind`, `caption`, `source` (String) · `image` (**Asset**) |
+| `WallPost` | `graveID`, `authorName`, `relationship`, `body` (String) · `isVisit`, `leftFlowers` (Int64) · `postedAt` (Timestamp) |
+| `WallDecision` | `postID`, `graveID`, `approval`, `decidedBy` (String) · `decidedAt` (Timestamp) |
 
 The import sets the queryable indexes too — `recordName` on all three types,
 plus `cemeteryId` on Grave and `ownerId` on Photo. Without them queries come back
@@ -166,6 +168,38 @@ with an Apple ID and the burial records, so treat it as such.
 where people are buried; the safe failure is a closed door. Apple's private-relay
 addresses are stable per app, so paste whatever address the first sign-in
 reports rather than guessing.
+
+## Development and production are different databases
+
+Not settings on one database — two separate sets of records. A grave seeded into
+development is simply not in production.
+
+| | reads |
+|---|---|
+| The app run from Xcode | **development** |
+| The app from TestFlight or the App Store | **production** |
+| This admin | whichever the header says |
+
+The header carries a switch, kept in a cookie, so one deployment can manage both
+without a redeploy. `CLOUDKIT_ENV` is only the default.
+
+Promoting the schema (Console → **Deploy Schema Changes**) copies the *shape* to
+production and **not the records**: after promoting, switch the admin to
+Production and seed again. Photographs travel with their records, so they need
+re-uploading too.
+
+## The wall, shared
+
+`WallPost` records carry what people write; `WallDecision` records carry what the
+family decided about them. They are separate because CloudKit's public database
+lets a person edit only what they created — a steward can never write to a
+stranger's record — so a decision has to be its own record, made by the steward,
+with the most recent one winning. That is also closer to the truth: the post is
+what somebody said, and the decision is what the family did about it.
+
+The app writes to the phone first and pushes afterwards, since a visit recorded
+in a cemetery with no signal is still a visit that happened. Unsent posts carry
+`synced = false` and go out on the next refresh.
 
 ## A CloudKit habit worth knowing
 
