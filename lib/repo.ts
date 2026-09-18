@@ -45,6 +45,15 @@ async function writeLocal<T>(file: string, rows: T[]): Promise<void> {
 
 const fieldValue = (record: CKRecord, key: string) => record.fields?.[key]?.value;
 
+// CloudKit has no nested arrays, so corner offsets travel flat: [x1, y1, x2, y2…]
+const unflatten = (flat?: number[]): number[][] | null =>
+  flat && flat.length >= 6
+    ? Array.from({ length: Math.floor(flat.length / 2) }, (_, i) => [flat[i * 2], flat[i * 2 + 1]])
+    : null;
+
+const flatten = (pairs?: number[][] | null): number[] | undefined =>
+  pairs && pairs.length >= 3 ? pairs.flat() : undefined;
+
 function toCemetery(record: CKRecord): Cemetery {
   return {
     id: record.recordName,
@@ -77,6 +86,8 @@ function toGrave(record: CKRecord): Grave {
     plot: Number(fieldValue(record, "plot") ?? 1),
     latitude: Number(fieldValue(record, "latitude") ?? 0),
     longitude: Number(fieldValue(record, "longitude") ?? 0),
+    x: (fieldValue(record, "x") as number) ?? null,
+    y: (fieldValue(record, "y") as number) ?? null,
     religion: (fieldValue(record, "religion") as Grave["religion"]) ?? null,
     landmark: String(fieldValue(record, "landmark") ?? ""),
     verified: Boolean(Number(fieldValue(record, "verified") ?? 0)),
@@ -164,6 +175,8 @@ export async function saveCemetery(input: Omit<Cemetery, "id"> & { id?: string }
         surveyedSection: row.surveyedSection,
         rows: row.rows,
         plotsPerRow: row.plotsPerRow,
+        graveBearing: row.graveBearing,
+        boundaryOffsets: flatten(row.boundary),
       }),
     });
     return row;
@@ -233,6 +246,8 @@ export async function saveGrave(input: Omit<Grave, "id"> & { id?: string }): Pro
         plot: row.plot,
         latitude: row.latitude,
         longitude: row.longitude,
+        x: row.x,
+        y: row.y,
         religion: row.religion,
         landmark: row.landmark,
         verified: row.verified,

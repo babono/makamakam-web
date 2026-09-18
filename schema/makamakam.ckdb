@@ -8,6 +8,8 @@ DEFINE SCHEMA
         "___modifiedBy"  REFERENCE,
         "___recordID"    REFERENCE QUERYABLE,
         address          STRING,
+        boundaryOffsets  LIST<DOUBLE>,
+        graveBearing     DOUBLE,
         latitude         DOUBLE,
         longitude        DOUBLE,
         name             STRING QUERYABLE SEARCHABLE SORTABLE,
@@ -42,6 +44,8 @@ DEFINE SCHEMA
         section          STRING,
         stewardName      STRING,
         verified         INT64,
+        x                DOUBLE,
+        y                DOUBLE,
         GRANT WRITE TO "_creator",
         GRANT CREATE TO "_icloud",
         GRANT READ TO "_world"

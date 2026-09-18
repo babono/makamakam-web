@@ -35,6 +35,15 @@ const number = (form: FormData, key: string, fallback = 0) => {
 };
 const optionalText = (form: FormData, key: string) => text(form, key) || null;
 
+/** One "x, y" pair per line, as somebody would type them off a tape measure. */
+function parseBoundary(raw: string): number[][] | null {
+  const pairs = raw
+    .split("\n")
+    .map((line) => line.split(/[,\s]+/).filter(Boolean).map(Number))
+    .filter((pair) => pair.length === 2 && pair.every(Number.isFinite));
+  return pairs.length >= 3 ? pairs : null;
+}
+
 export async function saveCemeteryAction(form: FormData) {
   await requireAdmin();
   const id = text(form, "id");
@@ -50,6 +59,8 @@ export async function saveCemeteryAction(form: FormData) {
     surveyedSection: text(form, "surveyedSection") || "A",
     rows: number(form, "rows", 1),
     plotsPerRow: number(form, "plotsPerRow", 1),
+    graveBearing: form.get("graveBearing") ? number(form, "graveBearing") : null,
+    boundary: parseBoundary(text(form, "boundary")),
     photos: existing?.photos ?? [],
   });
 
@@ -83,6 +94,8 @@ export async function saveGraveAction(form: FormData) {
     plot: number(form, "plot", 1),
     latitude: number(form, "latitude"),
     longitude: number(form, "longitude"),
+    x: form.get("x") ? number(form, "x") : null,
+    y: form.get("y") ? number(form, "y") : null,
     religion: (optionalText(form, "religion") as Faith | null) ?? null,
     landmark: text(form, "landmark"),
     verified: form.get("verified") === "on",

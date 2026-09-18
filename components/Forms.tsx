@@ -69,6 +69,22 @@ export function CemeteryFields({ cemetery }: { cemetery?: Cemetery }) {
       <Field label="Petak per baris">
         <input name="plotsPerRow" type="number" step="1" defaultValue={cemetery?.plotsPerRow ?? 5} required />
       </Field>
+      <Field label="Arah baring makam (derajat)" hint="0 = utara. Dipakai menggambar makam sebagai persegi panjang, bukan titik.">
+        <input name="graveBearing" type="number" step="1" defaultValue={cemetery?.graveBearing ?? ""} />
+      </Field>
+      <div className="sm:col-span-2">
+        <Field
+          label="Sudut pagar (x,y per baris, meter dari gerbang)"
+          hint="Ditelusuri dengan meteran mengelilingi pagar. Bentuk tembok adalah petunjuk terkuat di denah — orang mencocokkan bentuk, bukan titik."
+        >
+          <textarea
+            name="boundary"
+            rows={4}
+            defaultValue={(cemetery?.boundary ?? []).map((pair) => pair.join(", ")).join("\n")}
+            placeholder={"0, 0\n50.8, 18.4\n42.6, 38.8"}
+          />
+        </Field>
+      </div>
     </div>
   );
 }
@@ -126,6 +142,15 @@ export function GraveFields({ grave, cemeteryId }: { grave?: Grave; cemeteryId: 
       </Field>
       <Field label="Bujur">
         <input name="longitude" type="number" step="0.000001" defaultValue={grave?.longitude ?? ""} required />
+      </Field>
+      <Field
+        label="Jarak ke timur dari gerbang (m)"
+        hint="Diukur dengan meteran, bukan GPS. Inilah yang dipakai menggambar denah."
+      >
+        <input name="x" type="number" step="0.1" defaultValue={grave?.x ?? ""} />
+      </Field>
+      <Field label="Jarak ke utara dari gerbang (m)">
+        <input name="y" type="number" step="0.1" defaultValue={grave?.y ?? ""} />
       </Field>
 
       <div className="sm:col-span-2">

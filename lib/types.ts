@@ -27,6 +27,10 @@ export interface Cemetery {
   surveyedSection: string;
   rows: number;
   plotsPerRow: number;
+  /// Which way the graves lie, degrees true.
+  graveBearing?: number | null;
+  /// The wall, as [x, y] corner offsets in metres from the gate.
+  boundary?: number[][] | null;
   photos: Photo[];
   updatedAt?: string;
 }
@@ -47,6 +51,16 @@ export interface Grave {
   plot: number;
   latitude: number;
   longitude: number;
+  /**
+   * Metres east and north of the cemetery's origin — the gate.
+   *
+   * This is what the app draws the plan from. Offsets come from a tape measure,
+   * so they are right relative to each other to the centimetre, and the whole
+   * plot shares one GPS error instead of every grave carrying its own. Null
+   * where a survey only managed a coordinate.
+   */
+  x?: number | null;
+  y?: number | null;
   /** Never guessed from a name. Null is a real and common state. */
   religion?: Faith | null;
   /** The sentence that bridges the last few metres GPS cannot. */
