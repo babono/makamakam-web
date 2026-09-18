@@ -73,11 +73,11 @@ Apple returns a **Key ID**.
 | Record type | Fields |
 |---|---|
 | `Cemetery` | `name`, `address` (String) · `latitude`, `longitude`, `radiusMeters`, `rows`, `plotsPerRow` (Double/Int64) · `surveyedSection` (String) · `photosJSON` (String) |
-| `Grave` | `cemeteryId`, `name`, `fatherName`, `gender`, `deathDate`, `section`, `religion`, `landmark`, `stewardName`, `photosJSON` (String) · `birthYear`, `row`, `plot`, `verified` (Int64) · `latitude`, `longitude` (Double) |
+| `Grave` | `cemeteryId`, `name`, `fatherName`, `gender`, `deathDate`, `section`, `religion`, `landmark`, `stewardName` (String) · `birthYear`, `row`, `plot`, `verified` (Int64) · `latitude`, `longitude` (Double) |
+| `Photo` | `ownerId`, `ownerType`, `kind`, `caption`, `source` (String) · `image` (**Asset**) |
 
-Mark `cemeteryId` **Queryable** (the admin filters on it) and add the
-`recordName` **Queryable** index to both types, or the list pages come back
-empty.
+Mark `cemeteryId` and `ownerId` **Queryable**, and add the `recordName`
+**Queryable** index to all three types, or the list pages come back empty.
 
 **5. Set the environment variables** — `CLOUDKIT_CONTAINER`, `CLOUDKIT_KEY_ID`,
 `CLOUDKIT_ENV=development`, and `CLOUDKIT_PRIVATE_KEY` as the *whole*
@@ -129,9 +129,22 @@ reports rather than guessing.
 
 ## Photographs
 
-Uploads land in `public/uploads` and are referenced by file name, the same names
-the iOS bundle uses. An empty set is normal and is left empty — many families
-have no photograph of the person, and some would not want one shown.
+With CloudKit on, every photograph is its own `Photo` record with an **asset**
+field. Assets belong to a field rather than to a record, so a list of them cannot
+live inside a grave — and putting each one in its own record means a photograph
+can be deleted without rewriting the grave, and that a grave's record stays
+small.
+
+The record carries `source`, the file name the iOS app caches the downloaded
+asset under, so a photograph that has been fetched once is available offline
+afterwards.
+
+Without CloudKit they are written to `public/uploads` and listed inside the
+owner's JSON. That path is **for development only** — a serverless deploy has no
+durable disk, so anything uploaded there is gone by the next request.
+
+An empty set is normal and is left empty: many families have no photograph of the
+person, and some would not want one shown.
 
 ## Deploying
 

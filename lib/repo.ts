@@ -2,7 +2,14 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 import type { Cemetery, Grave, Photo } from "./types";
-import { cloudKitConfigured, queryRecords, saveRecord, deleteRecord, type CKRecord } from "./ckws";
+import {
+  cloudKitConfigured,
+  queryRecords,
+  saveRecord,
+  deleteRecord,
+  uploadAsset,
+  type CKRecord,
+} from "./ckws";
 
 /**
  * One interface, two backings.
@@ -84,11 +91,52 @@ const wrap = (fields: Record<string, unknown>) =>
       .map(([key, value]) => [key, { value: typeof value === "boolean" ? (value ? 1 : 0) : value }]),
   );
 
+/**
+ * Photographs.
+ *
+ * In CloudKit each one is its own `Photo` record with a `image` asset field:
+ * assets belong to a field, so a record cannot hold an arbitrary list of them.
+ * The record also carries who it belongs to, which keeps a grave's record small
+ * and lets a photograph be deleted without rewriting the grave.
+ *
+ * In local mode the array simply lives inside the grave's JSON, which is all a
+ * laptop needs.
+ */
+function toPhoto(record: CKRecord): Photo {
+  const asset = record.fields?.image?.value as { downloadURL?: string } | undefined;
+  return {
+    id: record.recordName,
+    kind: (fieldValue(record, "kind") as Photo["kind"]) ?? "headstone",
+    source: String(fieldValue(record, "source") ?? `${record.recordName}.jpg`),
+    caption: (fieldValue(record, "caption") as string) ?? null,
+    // CloudKit hands back a signed URL; it is for the admin's own eyes, and is
+    // never written into the app's JSON.
+    url: asset?.downloadURL?.replace("${f}", "") ?? undefined,
+  };
+}
+
+async function photosFor(ownerIds: string[]): Promise<Map<string, Photo[]>> {
+  const grouped = new Map<string, Photo[]>();
+  if (!usingCloudKit() || ownerIds.length === 0) return grouped;
+
+  const records = await queryRecords("Photo");
+  for (const record of records) {
+    const owner = String(fieldValue(record, "ownerId") ?? "");
+    if (!ownerIds.includes(owner)) continue;
+    const list = grouped.get(owner) ?? [];
+    list.push(toPhoto(record));
+    grouped.set(owner, list);
+  }
+  return grouped;
+}
+
 // ---------- the repository ----------
 
 export async function listCemeteries(): Promise<Cemetery[]> {
   if (usingCloudKit()) {
-    return (await queryRecords("Cemetery")).map(toCemetery);
+    const rows = (await queryRecords("Cemetery")).map(toCemetery);
+    const photos = await photosFor(rows.map((row) => row.id));
+    return rows.map((row) => ({ ...row, photos: photos.get(row.id) ?? [] }));
   }
   return readLocal<Cemetery>(CEMETERIES);
 }
@@ -139,16 +187,22 @@ export async function removeCemetery(id: string): Promise<void> {
 }
 
 export async function listGraves(cemeteryId?: string): Promise<Grave[]> {
-  const rows = usingCloudKit()
-    ? (
-        await queryRecords(
-          "Grave",
-          cemeteryId
-            ? [{ fieldName: "cemeteryId", comparator: "EQUALS", fieldValue: { value: cemeteryId } }]
-            : undefined,
-        )
-      ).map(toGrave)
-    : await readLocal<Grave>(GRAVES);
+  let rows: Grave[];
+
+  if (usingCloudKit()) {
+    rows = (
+      await queryRecords(
+        "Grave",
+        cemeteryId
+          ? [{ fieldName: "cemeteryId", comparator: "EQUALS", fieldValue: { value: cemeteryId } }]
+          : undefined,
+      )
+    ).map(toGrave);
+    const photos = await photosFor(rows.map((row) => row.id));
+    rows = rows.map((row) => ({ ...row, photos: photos.get(row.id) ?? [] }));
+  } else {
+    rows = await readLocal<Grave>(GRAVES);
+  }
 
   const filtered = cemeteryId ? rows.filter((row) => row.cemeteryId === cemeteryId) : rows;
   return filtered.sort((a, b) => a.row - b.row || a.plot - b.plot);
@@ -204,13 +258,48 @@ export async function removeGrave(id: string): Promise<void> {
   await writeLocal(GRAVES, (await readLocal<Grave>(GRAVES)).filter((row) => row.id !== id));
 }
 
-/** Photographs land in `public/uploads` locally, and in CloudKit assets later. */
-export async function storePhoto(file: File): Promise<Photo> {
+/**
+ * A photograph, stored as a CloudKit asset where CloudKit is on, and on local
+ * disk where it is not.
+ *
+ * The local path is for development only: a serverless deploy has no disk worth
+ * writing to, and anything put there is gone by the next request.
+ */
+export async function storePhoto(
+  file: File,
+  owner: { id: string; type: "grave" | "cemetery"; kind: Photo["kind"]; caption: string | null },
+): Promise<Photo> {
   const bytes = Buffer.from(await file.arrayBuffer());
   const extension = (file.name.split(".").pop() ?? "jpg").toLowerCase();
-  const source = `${randomUUID()}.${extension}`;
+  const recordName = randomUUID();
+  const source = `${recordName}.${extension}`;
+
+  if (usingCloudKit()) {
+    const receipt = await uploadAsset("Photo", "image", bytes);
+    await saveRecord({
+      recordName,
+      recordType: "Photo",
+      fields: {
+        ownerId: { value: owner.id },
+        ownerType: { value: owner.type },
+        kind: { value: owner.kind },
+        caption: { value: owner.caption ?? "" },
+        // The file name the iOS app caches the downloaded asset under.
+        source: { value: source },
+        image: { value: receipt },
+      },
+    });
+    return { id: recordName, kind: owner.kind, source, caption: owner.caption };
+  }
+
   const directory = path.join(process.cwd(), "public", "uploads");
   await fs.mkdir(directory, { recursive: true });
   await fs.writeFile(path.join(directory, source), bytes);
-  return { id: source, kind: "headstone", source, caption: null, url: `/uploads/${source}` };
+  return { id: recordName, kind: owner.kind, source, caption: owner.caption, url: `/uploads/${source}` };
+}
+
+export async function removePhoto(photoId: string): Promise<void> {
+  if (usingCloudKit()) {
+    await deleteRecord(photoId);
+  }
 }

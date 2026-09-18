@@ -1,4 +1,3 @@
-import Image from "next/image";
 import type { Photo } from "@/lib/types";
 import { deletePhotoAction, uploadPhotoAction } from "@/app/admin/actions";
 import { SubmitButton } from "./Forms";
@@ -31,12 +30,14 @@ export function PhotoManager({
           {photos.map((photo) => (
             <li key={photo.id} className="space-y-2">
               <div className="relative aspect-[3/4] overflow-hidden rounded border border-hairline">
-                <Image
+                {/* A CloudKit asset arrives as a signed URL on another host,
+                    so this is a plain <img>: Next's optimiser would need that
+                    host allowlisted, and the URL rotates. */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
                   src={photo.url ?? `/uploads/${photo.source}`}
                   alt={photo.caption ?? photo.kind}
-                  fill
-                  sizes="200px"
-                  className="object-cover"
+                  className="absolute inset-0 h-full w-full object-cover"
                 />
               </div>
               <p className="text-xs text-ink-soft">{photo.caption ?? photo.kind}</p>

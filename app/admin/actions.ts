@@ -11,6 +11,8 @@ import {
   getCemetery,
   getGrave,
   storePhoto,
+  removePhoto,
+  usingCloudKit,
 } from "@/lib/repo";
 import type { Faith, Grave, Photo, PhotoKind } from "@/lib/types";
 
@@ -107,43 +109,54 @@ export async function uploadPhotoAction(form: FormData) {
 
   const kind = (text(form, "kind") || "headstone") as PhotoKind;
   const caption = optionalText(form, "caption");
-  const photo: Photo = { ...(await storePhoto(file)), kind, caption };
-
   const graveId = text(form, "graveId");
-  if (graveId) {
-    const grave = await getGrave(graveId);
-    if (!grave) return;
-    await saveGrave({ ...grave, photos: [...grave.photos, photo] });
-    revalidatePath(`/admin/graves/${graveId}`);
-    return;
+  const cemeteryId = text(form, "cemeteryId");
+
+  const owner = graveId
+    ? ({ id: graveId, type: "grave" as const, kind, caption })
+    : ({ id: cemeteryId, type: "cemetery" as const, kind: "cemetery" as PhotoKind, caption });
+
+  const photo: Photo = await storePhoto(file, owner);
+
+  // On CloudKit a photograph is its own record and already points at its owner;
+  // locally the list lives inside the owner's JSON, so it has to be written in.
+  if (!usingCloudKit()) {
+    if (graveId) {
+      const grave = await getGrave(graveId);
+      if (grave) await saveGrave({ ...grave, photos: [...grave.photos, photo] });
+    } else {
+      const cemetery = await getCemetery(cemeteryId);
+      if (cemetery) await saveCemetery({ ...cemetery, photos: [...cemetery.photos, photo] });
+    }
   }
 
-  const cemeteryId = text(form, "cemeteryId");
-  const cemetery = await getCemetery(cemeteryId);
-  if (!cemetery) return;
-  await saveCemetery({ ...cemetery, photos: [...cemetery.photos, { ...photo, kind: "cemetery" }] });
-  revalidatePath(`/admin/cemeteries/${cemeteryId}`);
+  revalidatePath(graveId ? `/admin/graves/${graveId}` : `/admin/cemeteries/${cemeteryId}`);
 }
 
 export async function deletePhotoAction(form: FormData) {
   await requireAdmin();
   const photoId = text(form, "photoId");
   const graveId = text(form, "graveId");
+  const cemeteryId = text(form, "cemeteryId");
 
-  if (graveId) {
-    const grave = await getGrave(graveId);
-    if (!grave) return;
-    await saveGrave({ ...grave, photos: grave.photos.filter((photo) => photo.id !== photoId) });
-    revalidatePath(`/admin/graves/${graveId}`);
-    return;
+  await removePhoto(photoId);
+
+  if (!usingCloudKit()) {
+    if (graveId) {
+      const grave = await getGrave(graveId);
+      if (grave) {
+        await saveGrave({ ...grave, photos: grave.photos.filter((photo) => photo.id !== photoId) });
+      }
+    } else {
+      const cemetery = await getCemetery(cemeteryId);
+      if (cemetery) {
+        await saveCemetery({
+          ...cemetery,
+          photos: cemetery.photos.filter((photo) => photo.id !== photoId),
+        });
+      }
+    }
   }
 
-  const cemeteryId = text(form, "cemeteryId");
-  const cemetery = await getCemetery(cemeteryId);
-  if (!cemetery) return;
-  await saveCemetery({
-    ...cemetery,
-    photos: cemetery.photos.filter((photo) => photo.id !== photoId),
-  });
-  revalidatePath(`/admin/cemeteries/${cemeteryId}`);
+  revalidatePath(graveId ? `/admin/graves/${graveId}` : `/admin/cemeteries/${cemeteryId}`);
 }

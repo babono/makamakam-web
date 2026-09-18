@@ -129,11 +129,19 @@ export async function deleteRecord(recordName: string): Promise<void> {
  * Assets are a three-step dance: ask for a URL, PUT the bytes there, then write
  * the token the upload returns into the record's field.
  */
+export interface CKAssetToken {
+  fileChecksum: string;
+  size: number;
+  receipt: string;
+  wrappingKey?: string;
+  referenceChecksum?: string;
+}
+
 export async function uploadAsset(
   recordType: string,
   fieldName: string,
   bytes: Buffer,
-): Promise<unknown> {
+): Promise<CKAssetToken> {
   const tokens = await call<{
     tokens: Array<{ url: string }>;
   }>("assets/upload", { tokens: [{ recordType, fieldName }] });
@@ -145,6 +153,7 @@ export async function uploadAsset(
   if (!response.ok) {
     throw new Error(`Asset upload failed: ${response.status} ${await response.text()}`);
   }
-  const body = (await response.json()) as { singleFile?: unknown };
+  const body = (await response.json()) as { singleFile?: CKAssetToken };
+  if (!body.singleFile) throw new Error("CloudKit returned no asset receipt");
   return body.singleFile;
 }
