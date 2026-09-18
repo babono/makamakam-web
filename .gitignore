@@ -43,3 +43,6 @@ next-env.d.ts
 # runtime data and uploads
 /.data
 /public/uploads
+
+# CloudKit server-to-server key
+*.pem

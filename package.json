@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "seed": "node scripts/seed.mjs",
-    "apple-secret": "node scripts/apple-client-secret.mjs"
+    "apple-secret": "node scripts/apple-client-secret.mjs",
+    "cloudkit:doctor": "node scripts/cloudkit-doctor.mjs"
   },
   "dependencies": {
     "next": "16.3.5",

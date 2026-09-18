@@ -55,20 +55,28 @@ Capabilities → **+ Capability → iCloud** → tick **CloudKit** → add a con
 (`iCloud.me.babono.makamakam`). The iOS entitlements file is currently empty, so
 this step is what creates the container at all.
 
-**2. Generate the key pair yourself.** CloudKit server-to-server keys are not
-downloaded from Apple like a `.p8` — you make the key and give Apple the public
-half:
+**2. The key pair already exists.** `cloudkit-key.pem` was generated in this
+directory and is gitignored; `CLOUDKIT_PRIVATE_KEY` in `.env.local` already
+points at it. Print the public half again with:
 
 ```
-openssl ecparam -name prime256v1 -genkey -noout -out cloudkit-key.pem
 openssl ec -in cloudkit-key.pem -pubout
 ```
+
+CloudKit server-to-server keys are not downloaded from Apple like a `.p8` — you
+make the key and give Apple the public half.
 
 **3. Register it.** CloudKit Console → your container → **Tokens & Keys** →
 *Server-to-Server Keys* → **Add**, paste the public key from the second command.
 Apple returns a **Key ID**.
 
-**4. Create the record types.** Console → Schema → Record Types:
+**4. Let the seed create the record types.** In the **development** environment
+CloudKit creates record types and fields on first write, so pressing *Isi dari
+survei* in the admin is enough — there is nothing to type into the Console. Run
+`npm run cloudkit:doctor` first: it reads only, and reports which of the three
+types exist and which indexes are still missing.
+
+For reference, what the seed will create:
 
 | Record type | Fields |
 |---|---|
@@ -91,9 +99,19 @@ CLOUDKIT_PRIVATE_KEY="-----BEGIN EC PRIVATE KEY-----\nMHcC...\n-----END EC PRIVA
 27 surveyed graves into whichever backing is live. The header says which that
 is, and the button reports what it wrote.
 
-Promote the schema to Production in the Console before switching
-`CLOUDKIT_ENV=production`; development schemas do not exist in production until
-you do.
+**7. Promote.** Console → Schema → **Deploy Schema Changes**, then switch
+`CLOUDKIT_ENV=production`. A development schema does not exist in production
+until you do this, and a production schema cannot be edited afterwards — only
+added to.
+
+### Who does what
+
+| | |
+|---|---|
+| Already done | Key pair generated, `.env.local` wired, record shapes settled, `Photo` assets implemented on both sides, doctor script |
+| **You, in the Console** | Register the public key → get the Key ID · flip the queryable indexes the doctor names · Deploy Schema Changes to production |
+| **You, in Vercel** | The four `CLOUDKIT_*` variables, plus the Auth.js ones |
+| Either of us, once the Key ID is in `.env.local` | Run the seed, verify with the doctor |
 
 The header in the admin tells you which backing is live — "CloudKit" or
 "Penyimpanan lokal" — so this is never a guess.
