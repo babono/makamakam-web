@@ -30,11 +30,12 @@ const sections = [
     ],
   },
   {
-    title: "Yang Anda tulis",
+    title: "Yang Anda tulis, dan di mana ia disimpan",
     body: [
-      "Catatan pribadi hanya ada di ponsel Anda. Tidak dikirim ke keluarga, tidak ke kami, tidak ke mana pun.",
-      "Kenangan untuk keluarga memang dimaksudkan untuk dibaca orang lain, dan dikirim bersama nama serta hubungan yang Anda tulis. Keluarga yang memegang catatan makam dapat menampilkan atau menghapusnya.",
-      "Nama dan hubungan yang Anda isi di Pengaturan disimpan di ponsel ini saja, dan dipakai untuk menandatangani apa yang Anda kirim.",
+      "Catatan ziarah dan kenangan yang Anda tulis dimaksudkan untuk dibaca — dikirim ke wadah iCloud milik aplikasi ini bersama nama dan hubungan yang Anda tulis, lalu ditampilkan sejauh yang diizinkan keluarga.",
+      "Keluarga yang memegang catatan makam dapat menampilkan atau menghapus tulisan siapa pun, dan dapat menutup dinding sama sekali.",
+      "Makam yang Anda simpan disalin ke iCloud pribadi Anda sendiri. Pengguna lain tidak bisa melihatnya, dan kami pun tidak.",
+      "Sebelum Anda mengirim tulisan pertama, aplikasi menjelaskan ke mana tulisan itu pergi. Tidak ada layar masuk karena tidak ada akun terpisah — Apple ID di ponsel Anda yang menandatanganinya.",
     ],
   },
   {
