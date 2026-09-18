@@ -69,8 +69,10 @@ export default async function CemeteryEditor({
                 <Link href={`/admin/graves/${grave.id}`} className="plaque block p-4">
                   <p className="font-[family-name:var(--font-serif)] text-lg">{grave.name}</p>
                   <p className="mt-1 text-xs text-ink-soft">
-                    {grave.section}-{grave.row}-{grave.plot}
-                    {grave.deathDate ? ` · wafat ${grave.deathDate}` : ""}
+                    {grave.section && grave.row && grave.plot
+                      ? `${grave.section}-${grave.row}-${grave.plot} · `
+                      : ""}
+                    {grave.deathDate ? `wafat ${grave.deathDate}` : "tanggal wafat tidak tercatat"}
                     {grave.verified ? " · sudah dicek" : " · belum dicek"}
                     {grave.photos.length > 0 ? ` · ${grave.photos.length} foto` : ""}
                   </p>

@@ -81,9 +81,9 @@ function toGrave(record: CKRecord): Grave {
     gender: (fieldValue(record, "gender") as Grave["gender"]) ?? null,
     birthYear: (fieldValue(record, "birthYear") as number) ?? null,
     deathDate: (fieldValue(record, "deathDate") as string) ?? null,
-    section: String(fieldValue(record, "section") ?? "A"),
-    row: Number(fieldValue(record, "row") ?? 1),
-    plot: Number(fieldValue(record, "plot") ?? 1),
+    section: (fieldValue(record, "section") as string) ?? null,
+    row: (fieldValue(record, "row") as number) ?? null,
+    plot: (fieldValue(record, "plot") as number) ?? null,
     latitude: Number(fieldValue(record, "latitude") ?? 0),
     longitude: Number(fieldValue(record, "longitude") ?? 0),
     x: (fieldValue(record, "x") as number) ?? null,
@@ -222,7 +222,7 @@ export async function listGraves(cemeteryId?: string): Promise<Grave[]> {
   }
 
   const filtered = cemeteryId ? rows.filter((row) => row.cemeteryId === cemeteryId) : rows;
-  return filtered.sort((a, b) => a.row - b.row || a.plot - b.plot);
+  return filtered.sort((a, b) => a.name.localeCompare(b.name));
 }
 
 export async function getGrave(id: string): Promise<Grave | undefined> {
@@ -230,7 +230,9 @@ export async function getGrave(id: string): Promise<Grave | undefined> {
 }
 
 export async function saveGrave(input: Omit<Grave, "id"> & { id?: string }): Promise<Grave> {
-  const id = input.id?.trim() || `${input.section}-${input.row}-${String(input.plot).padStart(2, "0")}`;
+  // An id no longer derives from a ledger number, since a grave may not have
+  // one. Existing records keep the ids they were seeded with.
+  const id = input.id?.trim() || randomUUID();
   const row: Grave = { ...input, id, updatedAt: new Date().toISOString() };
 
   if (usingCloudKit()) {

@@ -46,9 +46,14 @@ export interface Grave {
   birthYear?: number | null;
   /** ISO yyyy-MM-dd, as written on the stone. */
   deathDate?: string | null;
-  section: string;
-  row: number;
-  plot: number;
+  /**
+   * A ledger reference, where the cemetery keeps one. Optional: the app no
+   * longer lays anything out by block and row, and plenty of graves have no
+   * such number.
+   */
+  section?: string | null;
+  row?: number | null;
+  plot?: number | null;
   latitude: number;
   longitude: number;
   /**

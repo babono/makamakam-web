@@ -128,14 +128,21 @@ export function GraveFields({ grave, cemeteryId }: { grave?: Grave; cemeteryId: 
           ))}
         </select>
       </Field>
+      <div className="sm:col-span-2">
+        <p className="eyebrow">Nomor dalam catatan pengurus — boleh dikosongkan</p>
+        <p className="mt-1 text-xs leading-relaxed text-ink-soft">
+          Aplikasi tidak lagi menyusun apa pun berdasarkan blok dan baris; letak makam berasal dari
+          jarak yang diukur. Nomor ini hanya ditampilkan di layar makam itu sendiri.
+        </p>
+      </div>
       <Field label="Blok">
-        <input name="section" defaultValue={grave?.section ?? "A"} required />
+        <input name="section" defaultValue={grave?.section ?? ""} />
       </Field>
       <Field label="Baris">
-        <input name="row" type="number" step="1" defaultValue={grave?.row ?? 1} required />
+        <input name="row" type="number" step="1" defaultValue={grave?.row ?? ""} />
       </Field>
       <Field label="Petak">
-        <input name="plot" type="number" step="1" defaultValue={grave?.plot ?? 1} required />
+        <input name="plot" type="number" step="1" defaultValue={grave?.plot ?? ""} />
       </Field>
       <Field label="Lintang">
         <input name="latitude" type="number" step="0.000001" defaultValue={grave?.latitude ?? ""} required />

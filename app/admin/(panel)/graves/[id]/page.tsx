@@ -19,9 +19,11 @@ export default async function GraveEditor({ params }: { params: Promise<{ id: st
           ← {cemetery?.name ?? "Pemakaman"}
         </Link>
         <h1 className="mt-1 font-[family-name:var(--font-serif)] text-3xl">{grave.name}</h1>
-        <p className="mt-1 text-sm text-ink-soft">
-          {grave.section}-{grave.row}-{grave.plot}
-        </p>
+        {grave.section && grave.row && grave.plot && (
+          <p className="mt-1 text-sm text-ink-soft">
+            {grave.section}-{grave.row}-{grave.plot}
+          </p>
+        )}
       </div>
 
       <section className="plaque p-5">
