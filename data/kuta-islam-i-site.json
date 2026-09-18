@@ -1,0 +1,17 @@
+{
+  "cemeteryId": "1d0f90fa-2c92-49d2-80ef-590c1268bab9",
+  "name": "Pemakaman Islam I, Lingkungan Desa Adat Kuta",
+  "gate": { "latitude": -8.727004, "longitude": 115.176878 },
+  "graveBearing": 4,
+  "boundarySource": "satellite outline, not a tape measure",
+  "boundaryOffsets": [
+    [-3.7, 28.8],
+    [23.1, 29.6],
+    [26.4, -6.5],
+    [0.9, -7.2]
+  ],
+  "positions": {
+    "source": "scattered",
+    "note": "The 26 graves are placed at random inside the wall, seeded at 20260918 so a re-run does not move them. They are read off photographs of the stones, not off the ground: the plan shows how full the cemetery is and roughly where to walk, and every one of these records is marked unverified. Replace the whole scatter with surveyed x/y when the tape measure comes out."
+  }
+}
