@@ -96,6 +96,7 @@ export async function saveGraveAction(form: FormData) {
     longitude: number(form, "longitude"),
     x: form.get("x") ? number(form, "x") : null,
     y: form.get("y") ? number(form, "y") : null,
+    bearing: form.get("bearing") ? number(form, "bearing") : null,
     religion: (optionalText(form, "religion") as Faith | null) ?? null,
     landmark: text(form, "landmark"),
     verified: form.get("verified") === "on",

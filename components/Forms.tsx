@@ -152,6 +152,9 @@ export function GraveFields({ grave, cemeteryId }: { grave?: Grave; cemeteryId: 
       <Field label="Jarak ke utara dari gerbang (m)">
         <input name="y" type="number" step="0.1" defaultValue={grave?.y ?? ""} />
       </Field>
+      <Field label="Arah baring nisan (derajat)" hint="Kosongkan bila tidak diukur — akan mengikuti arah umum pemakaman.">
+        <input name="bearing" type="number" step="1" defaultValue={grave?.bearing ?? ""} />
+      </Field>
 
       <div className="sm:col-span-2">
         <Field

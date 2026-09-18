@@ -61,6 +61,8 @@ export interface Grave {
    */
   x?: number | null;
   y?: number | null;
+  /** Which way this stone lies, degrees true. Null falls back to the cemetery. */
+  bearing?: number | null;
   /** Never guessed from a name. Null is a real and common state. */
   religion?: Faith | null;
   /** The sentence that bridges the last few metres GPS cannot. */

@@ -29,6 +29,7 @@ DEFINE SCHEMA
         "___modTime"     TIMESTAMP,
         "___modifiedBy"  REFERENCE,
         "___recordID"    REFERENCE QUERYABLE,
+        bearing          DOUBLE,
         birthYear        INT64,
         cemeteryId       STRING QUERYABLE SORTABLE,
         deathDate        STRING,
