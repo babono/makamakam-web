@@ -50,12 +50,50 @@ testable on a laptop. `lib/repo.ts` is the seam; both backings satisfy it.
 
 ### Turning CloudKit on
 
-1. In the CloudKit dashboard, add record types `Cemetery` and `Grave` whose
-   fields match the `wrap({...})` calls in `lib/repo.ts` (all queryable, plus a
-   `photosJSON` string).
-2. Generate a **server-to-server key**, and paste the `.p8` into
-   `CLOUDKIT_PRIVATE_KEY` with newlines as `\n`.
-3. Set `CLOUDKIT_CONTAINER`, `CLOUDKIT_KEY_ID`, `CLOUDKIT_ENV`.
+**1. Make the container exist.** In Xcode, on the iOS target: Signing &
+Capabilities → **+ Capability → iCloud** → tick **CloudKit** → add a container
+(`iCloud.me.babono.makamakam`). The iOS entitlements file is currently empty, so
+this step is what creates the container at all.
+
+**2. Generate the key pair yourself.** CloudKit server-to-server keys are not
+downloaded from Apple like a `.p8` — you make the key and give Apple the public
+half:
+
+```
+openssl ecparam -name prime256v1 -genkey -noout -out cloudkit-key.pem
+openssl ec -in cloudkit-key.pem -pubout
+```
+
+**3. Register it.** CloudKit Console → your container → **Tokens & Keys** →
+*Server-to-Server Keys* → **Add**, paste the public key from the second command.
+Apple returns a **Key ID**.
+
+**4. Create the record types.** Console → Schema → Record Types:
+
+| Record type | Fields |
+|---|---|
+| `Cemetery` | `name`, `address` (String) · `latitude`, `longitude`, `radiusMeters`, `rows`, `plotsPerRow` (Double/Int64) · `surveyedSection` (String) · `photosJSON` (String) |
+| `Grave` | `cemeteryId`, `name`, `fatherName`, `gender`, `deathDate`, `section`, `religion`, `landmark`, `stewardName`, `photosJSON` (String) · `birthYear`, `row`, `plot`, `verified` (Int64) · `latitude`, `longitude` (Double) |
+
+Mark `cemeteryId` **Queryable** (the admin filters on it) and add the
+`recordName` **Queryable** index to both types, or the list pages come back
+empty.
+
+**5. Set the environment variables** — `CLOUDKIT_CONTAINER`, `CLOUDKIT_KEY_ID`,
+`CLOUDKIT_ENV=development`, and `CLOUDKIT_PRIVATE_KEY` as the *whole*
+`cloudkit-key.pem` with newlines written as `\n`:
+
+```
+CLOUDKIT_PRIVATE_KEY="-----BEGIN EC PRIVATE KEY-----\nMHcC...\n-----END EC PRIVATE KEY-----\n"
+```
+
+**6. Fill it.** Sign in to `/admin` and press **Isi dari survei** — it writes the
+27 surveyed graves into whichever backing is live. The header says which that
+is, and the button reports what it wrote.
+
+Promote the schema to Production in the Console before switching
+`CLOUDKIT_ENV=production`; development schemas do not exist in production until
+you do.
 
 The header in the admin tells you which backing is live — "CloudKit" or
 "Penyimpanan lokal" — so this is never a guess.

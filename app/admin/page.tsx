@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { listCemeteries, listGraves } from "@/lib/repo";
+import { listCemeteries, listGraves, usingCloudKit } from "@/lib/repo";
+import { SeedButton } from "@/components/SeedButton";
 import { CemeteryFields, SubmitButton } from "@/components/Forms";
 import { saveCemeteryAction } from "./actions";
 
@@ -38,6 +39,15 @@ export default async function AdminHome() {
           })}
         </ul>
       )}
+
+      <section className="plaque p-5">
+        <p className="eyebrow">Isi dari survei lapangan</p>
+        <p className="mt-2 mb-4 text-sm leading-relaxed text-ink-soft">
+          Menyalin data survei yang dibawa aplikasi iOS ke penyimpanan yang sedang aktif. Inilah
+          cara wadah CloudKit terisi pertama kali, tanpa mengetik ulang satu per satu.
+        </p>
+        <SeedButton backing={usingCloudKit() ? "CloudKit" : "penyimpanan lokal (.data)"} />
+      </section>
 
       <details className="plaque p-5">
         <summary className="cursor-pointer font-[family-name:var(--font-serif)] text-xl">
