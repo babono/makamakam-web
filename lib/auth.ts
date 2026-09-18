@@ -22,6 +22,8 @@ const allowlist = (process.env.ADMIN_EMAILS ?? "")
 const devLoginEnabled =
   process.env.ADMIN_DEV_LOGIN === "1" && process.env.NODE_ENV !== "production";
 
+export const allowedAdminEmails = allowlist;
+
 export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
     ...(process.env.AUTH_APPLE_ID ? [Apple] : []),
@@ -42,19 +44,29 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   ],
   pages: { signIn: "/admin/login" },
   callbacks: {
-    signIn: ({ user }) => {
-      if (devLoginEnabled) return true;
-      const email = user.email?.toLowerCase();
-      return Boolean(email && allowlist.includes(email));
-    },
+    signIn: ({ user }) => isAdmin(user.email),
   },
   trustHost: true,
 });
 
+/**
+ * Two separate questions, deliberately answered by two separate systems:
+ *
+ * - *Who may use this panel?* — this function, over a Sign in with Apple
+ *   session. CloudKit has no opinion about it.
+ * - *What may the server write?* — the server-to-server key in `lib/ckws.ts`,
+ *   which acts as the application. It never sees an Apple ID.
+ *
+ * So an Apple ID outside the allowlist is turned away here, at the door, and
+ * never reaches CloudKit at all.
+ */
 export function isAdmin(email?: string | null): boolean {
   // A session is required either way: the development bypass loosens *who* may
   // sign in, never whether signing in is needed at all.
   if (!email) return false;
-  if (devLoginEnabled) return true;
+  // With an allowlist set, even the local bypass honours it — otherwise
+  // development behaves differently from production in exactly the place where
+  // that matters most.
+  if (devLoginEnabled && allowlist.length === 0) return true;
   return allowlist.includes(email.toLowerCase());
 }

@@ -150,6 +150,18 @@ app. When the app does adopt CloudKit, the same records are already in place.
 4. Set `AUTH_APPLE_ID` (the Service ID), `AUTH_APPLE_SECRET` (the minted JWT),
    and `ADMIN_EMAILS`.
 
+### Two doors, two keys
+
+CloudKit never checks who is signed in. The **server-to-server key acts as the
+application**, so anything reaching `lib/ckws.ts` is already trusted — which
+means Sign in with Apple is not protecting CloudKit, it is protecting *the
+panel*. Apple proves the person owns an Apple ID; `ADMIN_EMAILS` decides whether
+that particular Apple ID may use the tool. An address outside the list is turned
+away at the door and never reaches CloudKit at all.
+
+That also means the allowlist is the *only* thing standing between a stranger
+with an Apple ID and the burial records, so treat it as such.
+
 `ADMIN_EMAILS` empty means **nobody** gets in. This panel edits the record of
 where people are buried; the safe failure is a closed door. Apple's private-relay
 addresses are stable per app, so paste whatever address the first sign-in

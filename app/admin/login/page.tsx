@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { auth, isAdmin, signIn } from "@/lib/auth";
+import { allowedAdminEmails, auth, isAdmin, signIn } from "@/lib/auth";
 import { SiteHeader, Plaque } from "@/components/Shell";
 
 const devLogin = process.env.ADMIN_DEV_LOGIN === "1" && process.env.NODE_ENV !== "production";
@@ -53,7 +53,18 @@ export default async function Login() {
               }}
             >
               <p className="eyebrow">Hanya untuk pengembangan lokal</p>
-              <input name="email" type="email" placeholder="anda@contoh.com" required />
+              <p className="text-xs leading-relaxed text-ink-soft">
+                {allowedAdminEmails.length > 0
+                  ? `Masukkan salah satu alamat yang terdaftar: ${allowedAdminEmails.join(", ")}.`
+                  : "Alamat apa pun bisa dipakai — ADMIN_EMAILS masih kosong, jadi daftar izin belum berlaku."}
+              </p>
+              <input
+                name="email"
+                type="email"
+                placeholder="anda@contoh.com"
+                defaultValue={allowedAdminEmails[0] ?? ""}
+                required
+              />
               <button
                 type="submit"
                 className="w-full rounded border border-grass px-4 py-2 text-sm text-grass-deep"
