@@ -128,9 +128,8 @@ DEFINE SCHEMA
         "___etag"        STRING,
         "___modTime"     TIMESTAMP,
         "___modifiedBy"  REFERENCE,
-        "___recordID"    REFERENCE QUERYABLE,
+        "___recordID"    REFERENCE,
         roles            LIST<INT64>,
         GRANT WRITE TO "_creator",
-        GRANT CREATE TO "_icloud",
         GRANT READ TO "_world"
     );
