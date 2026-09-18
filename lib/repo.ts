@@ -298,6 +298,31 @@ export async function storePhoto(
   return { id: recordName, kind: owner.kind, source, caption: owner.caption, url: `/uploads/${source}` };
 }
 
+/**
+ * CloudKit's query index is eventually consistent: a record written a moment ago
+ * is fetchable by name immediately, but does not appear in a query for a second
+ * or two. The admin re-renders straight after a write, so without this wait a
+ * freshly uploaded photograph is simply missing until you reload — which reads
+ * as a failed upload rather than as a cache.
+ */
+export async function waitForPhoto(ownerId: string, photoId: string): Promise<void> {
+  if (!usingCloudKit()) return;
+  for (let attempt = 0; attempt < 6; attempt += 1) {
+    const grouped = await photosFor([ownerId]);
+    if ((grouped.get(ownerId) ?? []).some((photo) => photo.id === photoId)) return;
+    await new Promise((resolve) => setTimeout(resolve, 600));
+  }
+}
+
+/** The same wait, for the seed: the list page renders immediately after it. */
+export async function waitForCemeteries(): Promise<void> {
+  if (!usingCloudKit()) return;
+  for (let attempt = 0; attempt < 6; attempt += 1) {
+    if ((await listCemeteries()).length > 0) return;
+    await new Promise((resolve) => setTimeout(resolve, 600));
+  }
+}
+
 export async function removePhoto(photoId: string): Promise<void> {
   if (usingCloudKit()) {
     await deleteRecord(photoId);

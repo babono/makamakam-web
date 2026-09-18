@@ -2,7 +2,14 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import { NextResponse } from "next/server";
 import { auth, isAdmin } from "@/lib/auth";
-import { listCemeteries, listGraves, saveCemetery, saveGrave, usingCloudKit } from "@/lib/repo";
+import {
+  listCemeteries,
+  listGraves,
+  saveCemetery,
+  saveGrave,
+  usingCloudKit,
+  waitForCemeteries,
+} from "@/lib/repo";
 import type { Cemetery, Grave } from "@/lib/types";
 
 /**
@@ -55,6 +62,10 @@ export async function POST(request: Request) {
     await saveGrave(grave);
     written += 1;
   }
+
+  // The list page renders the moment this returns, and CloudKit's query index
+  // lags a write by a second or two.
+  await waitForCemeteries();
 
   return NextResponse.json({
     backing: usingCloudKit() ? "cloudkit" : "local",

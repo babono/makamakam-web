@@ -155,6 +155,19 @@ where people are buried; the safe failure is a closed door. Apple's private-rela
 addresses are stable per app, so paste whatever address the first sign-in
 reports rather than guessing.
 
+## A CloudKit habit worth knowing
+
+Two things about this API cost an afternoon each, and both are now handled in
+code rather than in anyone's memory:
+
+- **`records/modify` answers HTTP 200 and puts per-record failures inside the
+  response.** A write that never happened looks exactly like one that did.
+  `saveRecord` inspects what comes back.
+- **The query index is eventually consistent.** A record written a moment ago is
+  fetchable by name at once, but takes a second or two to appear in a *query* —
+  so a page that re-renders straight after a write shows nothing, which reads as
+  a failed save. `waitForPhoto` and `waitForCemeteries` wait it out.
+
 ## Photographs
 
 With CloudKit on, every photograph is its own `Photo` record with an **asset**

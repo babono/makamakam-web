@@ -12,6 +12,7 @@ import {
   getGrave,
   storePhoto,
   removePhoto,
+  waitForPhoto,
   usingCloudKit,
 } from "@/lib/repo";
 import type { Faith, Grave, Photo, PhotoKind } from "@/lib/types";
@@ -130,6 +131,7 @@ export async function uploadPhotoAction(form: FormData) {
     }
   }
 
+  await waitForPhoto(owner.id, photo.id);
   revalidatePath(graveId ? `/admin/graves/${graveId}` : `/admin/cemeteries/${cemeteryId}`);
 }
 
